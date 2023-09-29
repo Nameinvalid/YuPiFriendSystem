@@ -1,9 +1,6 @@
 package com.yupi.yupifriendbackgroud.model.domain;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -74,7 +71,9 @@ public class User implements Serializable {
 
     /**
      * 是否删除
+     * TableLogic主要是为了告诉mybatisplus框架这个字段是逻辑删除字段
      */
+    @TableLogic
     private Integer isDelete;
 
     /**
