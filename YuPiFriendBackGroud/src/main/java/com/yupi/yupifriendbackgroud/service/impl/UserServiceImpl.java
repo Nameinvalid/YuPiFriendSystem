@@ -129,6 +129,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         safetyUser.setTags(originUser.getTags());
         return safetyUser;
     }
+
+    /**
+     * 用户注销
+     * @param request
+     * @return
+     */
+    @Override
+    public int userLogout(HttpServletRequest request) {
+        //移除登录态
+        request.getSession().removeAttribute(UserConstant.USER_LOGIN_STATE.getResult());
+        return 1;
+    }
+
+
 }
 
 

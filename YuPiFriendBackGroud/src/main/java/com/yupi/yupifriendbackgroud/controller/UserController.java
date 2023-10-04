@@ -68,6 +68,41 @@ public class UserController {
         return ResultUtils.success(user);
     }
 
+    /**
+     * 用户注销
+     * @param httpServletRequest
+     * @return 返回用户是否注销成功
+     */
+    @PostMapping("/logout")
+    public BaseResponse<Integer> userLogout(HttpServletRequest httpServletRequest){
+        if (httpServletRequest==null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        int result = userService.userLogout(httpServletRequest);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 获取当前用户
+     *
+     * @param request
+     * @return
+     */
+    @GetMapping("/current")
+    public BaseResponse<User> getCurrentUser(HttpServletRequest request) {
+        Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE.getResult());
+        User currentUser = (User) userObj;
+        if (currentUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        long userId = currentUser.getId();
+        // TODO 校验用户是否合法
+        User user = userService.getById(userId);
+        User safetyUser = userService.safetyUser(user);
+        return ResultUtils.success(safetyUser);
+    }
+
+
 
 
     /**
