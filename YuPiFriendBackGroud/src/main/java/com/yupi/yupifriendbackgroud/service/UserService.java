@@ -17,9 +17,10 @@ public interface UserService extends IService<User> {
      * @param userAccount 用户账户
      * @param userPassword 用户密码
      * @param checkPassword 校验密码
+     * @param idNumber 用户身份证号
      * @return 新用户 id
      */
-    long userRegister(String userAccount,String userPassword,String checkPassword);
+    long userRegister(String userAccount,String userPassword,String checkPassword,String idNumber);
 
 
     /**
@@ -39,8 +40,8 @@ public interface UserService extends IService<User> {
 
     /**
      * 用户注销
-     * @param request
-     * @return
+     * @param request session
+     * @return 将用户信息在session中删除掉
      */
     int userLogout(HttpServletRequest request);
 

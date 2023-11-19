@@ -14,7 +14,7 @@ import java.util.Date;
 @Data
 public class User implements Serializable {
     /**
-     * 
+     * 用户id
      */
     @TableId(type = IdType.AUTO)
     private Long id;
@@ -85,6 +85,11 @@ public class User implements Serializable {
      * 标签列表
      */
     private String tags;
+
+    /**
+     * 身份证号
+     */
+    private String idNumber;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

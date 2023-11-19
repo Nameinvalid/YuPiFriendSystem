@@ -2,7 +2,9 @@ package com.yupi.yupifriendbackgroud.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.yupi.yupifriendbackgroud.common.ErrorCode;
 import com.yupi.yupifriendbackgroud.constant.UserConstant;
+import com.yupi.yupifriendbackgroud.exception.BusinessException;
 import com.yupi.yupifriendbackgroud.model.domain.User;
 import com.yupi.yupifriendbackgroud.service.UserService;
 import com.yupi.yupifriendbackgroud.mapper.UserMapper;
@@ -31,33 +33,44 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
 
     @Override
-    public long userRegister(String userAccount, String userPassword, String checkPassword) {
+    public long userRegister(String userAccount, String userPassword, String checkPassword, String idNumber) {
         //1. 校验 使用StringUtils.isAnyBlank可以直接一组进行校验不为空，不需要写||
-        if (StringUtils.isAnyBlank(userAccount, userPassword, checkPassword)) {
-            return -1;
+        if (StringUtils.isAnyBlank(userAccount, userPassword, checkPassword,idNumber)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"参数为空");
         }
         if (userAccount.length() < 4) {
-            return -2;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"账户过短");
         }
         if (userPassword.length() < 8 || checkPassword.length() < 8) {
-            return -3;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"密码长度过短");
         }
         //账户里不能包含特殊字符；
         String regEx = "[ _`~!@#$%^&*()+=|{}':;',\\[\\].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？]|\n|\r|\t";
         Matcher matcher = Pattern.compile(regEx).matcher(userAccount);
         if (matcher.find()) {
-            return -4;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"账户名中包含特殊字符");
         }
         //验证密码和校验密码相同
         if (!userPassword.equals(checkPassword)) {
-            return -5;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"用户密码和校验密码不相等");
         }
         //账户不能重复
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();//这个可以判定是否有相同的
         queryWrapper.eq("user_account", userAccount);
         long count = this.count(queryWrapper);
         if (count > 0) {
-            return -6;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"账号重复");
+        }
+        //校验身份证号是否是18位数
+        if (idNumber.length()!=18){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"身份证号位数不是18位");
+        }
+        //身份证号不能重复
+        queryWrapper = new QueryWrapper<>();//这个可以判定是否有相同的
+        queryWrapper.eq("id_number", idNumber);
+        count = this.count(queryWrapper);
+        if (count > 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"身份证号重复");
         }
         //2. 对密码进行加密
         String saltPassword=DigestUtils.md5DigestAsHex((UserConstant.SALT.getResult()+userPassword).getBytes());
@@ -65,13 +78,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         User user=new User();
         user.setUserAccount(userAccount);
         user.setUserPassword(saltPassword);
-
+        user.setIdNumber(idNumber);
         //boolean saveResult=this.save(user);//this=userMapper
         boolean saveResult=this.save(user);
         if (!saveResult){
-            return -1;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"注册失败");
         }
-
         return user.getId();
     }
 
@@ -80,31 +92,31 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         //1. 校验 使用StringUtils.isAnyBlank可以直接一组进行校验不为空，不需要写||
         if (StringUtils.isAnyBlank(userAccount, userPassword)) {
             // todo 统一改成异常
-            return null;
+            throw new BusinessException(ErrorCode.NULL_ERROR,ErrorCode.NULL_ERROR.getMessage());
         }
         if (userAccount.length() < 4) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"账号长度小于4位");
         }
         if (userPassword.length() < 8 ) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"密码长度不小于8位");
         }
         //账户里不能包含特殊字符；
         String regEx = "[ _`~!@#$%^&*()+=|{}':;',\\[\\].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？]|\n|\r|\t";
         Matcher matcher = Pattern.compile(regEx).matcher(userAccount);
         if (matcher.find()) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"账号中不能包含特殊字符");
         }
         //2. 对密码进行加密
         String saltPassword=DigestUtils.md5DigestAsHex((UserConstant.SALT.getResult()+userPassword).getBytes());
         //查询用户是否存在
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();//这个可以判定是否有相同的
         queryWrapper.eq("user_account", userAccount);
-        queryWrapper.eq("user_password",userPassword);
+        queryWrapper.eq("user_password",saltPassword);
         User user=userMapper.selectOne(queryWrapper);
         // 如果用户不存在返回null
         if (user==null){
             log.info("user login failed,userAccount can not match userPassword");
-            return null;
+            throw new BusinessException(ErrorCode.NULL_ERROR,"账号不存才");
         }
         //3. 用户脱敏
         User safetyUser=safetyUser(user);
@@ -115,6 +127,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Override
     public User safetyUser(User originUser) {
+        if (originUser == null) {
+            throw new BusinessException(ErrorCode.NULL_ERROR,"账号不存在");
+        }
         User safetyUser=new User();
         safetyUser.setId(originUser.getId());
         safetyUser.setUsername(originUser.getUsername());
@@ -123,6 +138,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         safetyUser.setGender(originUser.getGender());
         safetyUser.setPhone(originUser.getPhone());
         safetyUser.setEmail(originUser.getEmail());
+        safetyUser.setIdNumber(originUser.getIdNumber());
         safetyUser.setUserStatus(originUser.getUserStatus());
         safetyUser.setCreateTime(originUser.getCreateTime());
         safetyUser.setUserRole(originUser.getUserRole());
@@ -141,7 +157,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         request.getSession().removeAttribute(UserConstant.USER_LOGIN_STATE.getResult());
         return 1;
     }
-
 
 }
 

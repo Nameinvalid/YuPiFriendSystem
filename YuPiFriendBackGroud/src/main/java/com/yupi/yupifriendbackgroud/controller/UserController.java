@@ -41,10 +41,11 @@ public class UserController {
         String userAccount = userRegisterRequest.getUserAccount();
         String userPassword = userRegisterRequest.getUserPassword();
         String checkPassword = userRegisterRequest.getCheckPassword();
-        if (StringUtils.isAnyBlank(userAccount,userPassword,checkPassword)){
-            return null;
+        String idNumber=userRegisterRequest.getIdNumber();
+        if (StringUtils.isAnyBlank(userAccount,userPassword,checkPassword,idNumber)){
+            return ResultUtils.error(ErrorCode.NULL_ERROR,ErrorCode.PARAMS_ERROR.getMessage());
         }
-        Long result=userService.userRegister(userAccount,userPassword,checkPassword);
+        Long result=userService.userRegister(userAccount,userPassword,checkPassword,idNumber);
         return ResultUtils.success(result);
     }
 
@@ -83,7 +84,7 @@ public class UserController {
     }
 
     /**
-     * 获取当前用户
+     * 获取当前用户，使用session
      *
      * @param request
      * @return
@@ -101,9 +102,6 @@ public class UserController {
         User safetyUser = userService.safetyUser(user);
         return ResultUtils.success(safetyUser);
     }
-
-
-
 
     /**
      * 用户搜索类
@@ -149,7 +147,7 @@ public class UserController {
         // 在request中拿到登录信息
         Object userObj=request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE.getResult());
         User user=(User) userObj;
-        //对拿到的登录信息做一个权限的判断，如果不是管理员直接返回一个空数组
-        return user == null || user.getUserRole() != UserConstant.ADMIN_ROLE.getCode();
+        //对拿到的登录信息做一个权限的判断，如果是管理员则返回ture
+        return user != null && user.getUserRole() == UserConstant.ADMIN_ROLE.getCode();
     }
 }
