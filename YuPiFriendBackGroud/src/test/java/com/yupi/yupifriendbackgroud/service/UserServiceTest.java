@@ -45,7 +45,8 @@ class UserServiceTest {
         String userAccount="zhang";
         String userPassword="12345678910";
         String checkPassword="12345678910";
-        long result=userService.userRegister(userAccount,userPassword,checkPassword);
+        String idNumber="130531200104052313";
+        long result=userService.userRegister(userAccount,userPassword,checkPassword,idNumber );
         System.out.println(result);
         Assertions.assertTrue(result>0);
 
