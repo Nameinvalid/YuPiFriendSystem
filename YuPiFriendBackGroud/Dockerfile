@@ -10,4 +10,4 @@ COPY src ./src
 RUN mvn package -DskipTests
 
 # 运行项目
-CMD["java","-jar","/app/target/YuPiFriendBackGroud-0.0.1-SNAPSHOT.jar","--spring.profiles.active=prod"]
+CMD ["java","-jar","/app/target/YuPiFriendBackGroud-0.0.1-SNAPSHOT.jar","--spring.profiles.active=prod"]
