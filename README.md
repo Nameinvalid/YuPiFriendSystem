@@ -2,7 +2,7 @@
 
 复习用项目
 
-## 后台服务器
+## 服务器部署
 
 ### 配置nginx
 
@@ -52,7 +52,7 @@ Configuration summary
 //查看端口占用
 ```
 
-## 前端部署
+### 前端部署
 
 ``` bash
 //首先使用build进行打包，把dist.zip上传到相应的目录
@@ -73,7 +73,7 @@ Configuration summary
 //替换完成，保存并重启
 ```
 
-## 后端部署
+### 后端部署
 
 ```bash
 # yum install -y java-1.8.0-openjdk*
@@ -108,4 +108,112 @@ location ^~ /api/ {
   }
 //使得nignx能够代发到相应的java后端服务
 ```
+
+### MySQL数据库部署
+
+- 安装mysql教程:https://blog.csdn.net/qq_39150374/article/details/112471108
+- mysql远程访问，设置密码，绑定ipv4:https://blog.csdn.net/qq_45950024/article/details/122487644
+
+```bash
+# yum install mysql80-community-release-el8-1.noarch.rpm
+//下载安装mysql数据库
+# yum repolist enabled | grep "mysql.*-community.*"
+//查看mysql是否安装成功
+# yum install mysql-community-server 
+//这一步的时候可能很多人安装不上，因为是yum安装库的问题，错误（Error: GPG check FAILED），可以将--nogpgcheck添加到后面：
+# yum install mysql-community-server --nogpgcheck
+# service mysqld status
+//启动mysql
+# grep 'temporary password' /var/log/mysqld.log
+//显示mysql随机生成的密码
+# mysql -u root -p
+//输入生成的密码
+# use mysql;
+# ALTER USER 'root'@'localhost' IDENTIFIED BY '新密码';
+//为了安全不建议修改密码策略
+# flush privileges;
+//刷新权限
+# update user set host='%' where user = 'root';
+//由于不允许远程登录，所以更改表user将host参数localhost改成%，所有人都能登录
+# select host,user from user;
+//查看是否更改完成
+# quit
+//退出mysql
+# vim /etc/my.cnf
+//设置配置文件，添加 bind-address=0.0.0.0，设置成ipv4监听
+# service mysql restart
+//重启mysql
+# firewall-cmd --query-port=3306/tcp
+//查看防火墙状态：mysql 3306端口能否被访问
+# firewall-cmd --zone=public --add-port=3306/tcp --permanent
+//永久开启3306端口能被访问
+# firewall-cmd --reload
+//重新加载防火墙
+# firewall-cmd --query-port=3306/tcp
+//再次查看mysql能否被远程访问
+```
+
+## Linux宝塔面板
+
+重置服务器之后，自动安装完成宝塔面板
+
+- 在防火墙中打开8888端口，能够登录宝塔面板
+
+- 在应用管理中登录，使用 sudo /etc/init.d/bt default 命令获取用户名和密码
+- 然后登录宝塔
+- 设置完自己的密码记得保存
+- 什么软件先都不要装，按照自己的需求来安装
+
+### 数据库安装
+
+- 在软件商店安装mysql数据库
+
+- 点击添加数据库
+- 用户名自己起
+- 密码大小写+数字
+- 访问权限可以本地服务器/所有人（这个可以让你的idea也进行连接）
+- 在备份一栏点击导入，将自己的sql文件进行上传，然后导入到数据库
+- 这样就可以看到自己的表名等信息
+
+### 前端部署
+
+- 在根目录下建立一个前端文件夹，将前端编译好的代码上传
+
+- 在网站点击添加站点
+- 写下自己备案的域名/ip地址
+- 提交即可
+- 在设置中添加反向代理的配置，确保能访问到后端
+
+### 后端部署
+
+- 在软件商店安装tomcat服务器
+- 在根目录下建立一个后端文件夹，将打好的jar包上传
+- 在软件商店停止tomcat服务，因为我们只是需要tomcat中的JDK，tomcat会占用你的8080端口
+- 在网站点击java项目，添加java项目
+- 在项目jar路径中选择自己的jar包
+- 将项目名称改成自己想要的，项目端口也要改成你自己项目的端口
+- 在执行命令末尾加--spring.profiles.active=prod，使项目运行在生产环境下
+- 提交项目，项目就会自动运行
+- 在设置中能够看到个人的项目能够运行成功。
+
+## Docker部署
+
+docker相当于软件安装包
+
+Dockerfile用来指定构建相应的docker镜像的方法
+
+Dockerfile一帮情况下不需要自己写
+
+~~~java
+dockerfile
+FROM 基础镜像
+WORKDIR 镜像工作目录（项目代码所在地）
+COPY pom.xml
+COPY src ./src
+//镜像构建完成
+RUN mvn package -DskipTests
+//运行打包工具
+CMD["java","-jar","jar包所在地","--spring.profiles.active=prod"]
+//运行项目
+~~~
 
